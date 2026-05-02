@@ -1,8 +1,8 @@
 CMakeFiles/power_control.dir/Core/Src/main.c.obj: \
  E:\power_control\power_control\Core\Src\main.c \
- E:/power_control/power_control/Core/Inc/main.h \
+ E:\power_control\power_control\Core\Inc/main.h \
  E:/power_control/power_control/Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal.h \
- E:/power_control/power_control/Core/Inc/stm32g0xx_hal_conf.h \
+ E:\power_control\power_control\Core\Inc/stm32g0xx_hal_conf.h \
  E:/power_control/power_control/Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_rcc.h \
  E:/power_control/power_control/Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_def.h \
  E:/power_control/power_control/Drivers/CMSIS/Device/ST/STM32G0xx/Include/stm32g0xx.h \

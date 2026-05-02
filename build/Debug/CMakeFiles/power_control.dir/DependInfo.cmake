@@ -21,6 +21,7 @@ set(CMAKE_TARGET_DEFINITIONS_ASM
 
 # The include file search paths:
 set(CMAKE_ASM_TARGET_INCLUDE_PATH
+  "E:/power_control/power_control/Core/Inc"
   "E:/power_control/power_control/cmake/stm32cubemx/../../Core/Inc"
   "E:/power_control/power_control/cmake/stm32cubemx/../../Drivers/STM32G0xx_HAL_Driver/Inc"
   "E:/power_control/power_control/cmake/stm32cubemx/../../Drivers/STM32G0xx_HAL_Driver/Inc/Legacy"

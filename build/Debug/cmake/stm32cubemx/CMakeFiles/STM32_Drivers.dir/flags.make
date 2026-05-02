@@ -6,5 +6,5 @@ C_DEFINES = -DDEBUG -DSTM32G0B1xx -DUSE_HAL_DRIVER
 
 C_INCLUDES = -IE:\power_control\power_control\cmake\stm32cubemx\..\..\Core\Inc -IE:\power_control\power_control\cmake\stm32cubemx\..\..\Drivers\STM32G0xx_HAL_Driver\Inc -IE:\power_control\power_control\cmake\stm32cubemx\..\..\Drivers\STM32G0xx_HAL_Driver\Inc\Legacy -IE:\power_control\power_control\cmake\stm32cubemx\..\..\Drivers\CMSIS\Device\ST\STM32G0xx\Include -IE:\power_control\power_control\cmake\stm32cubemx\..\..\Drivers\CMSIS\Include
 
-C_FLAGS =  -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3 -std=gnu11
+C_FLAGS =  -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3 -std=gnu11
 

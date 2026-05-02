@@ -12,6 +12,7 @@
 		[
 			"add_executable",
 			"target_link_libraries",
+			"target_include_directories",
 			"target_sources"
 		],
 		"files" : 
@@ -42,14 +43,26 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 64,
+				"line" : 68,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
+				"file" : 0,
+				"line" : 53,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
 				"file" : 1,
 				"line" : 80,
 				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 46,
+				"parent" : 0
 			}
 		]
 	},
@@ -75,7 +88,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : " -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3 -std=gnu11"
+					"fragment" : " -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3 -std=gnu11"
 				}
 			],
 			"defines" : 
@@ -95,6 +108,10 @@
 			],
 			"includes" : 
 			[
+				{
+					"backtrace" : 5,
+					"path" : "E:/power_control/power_control/Core/Inc"
+				},
 				{
 					"backtrace" : 3,
 					"path" : "E:/power_control/power_control/cmake/stm32cubemx/../../Core/Inc"
@@ -138,7 +155,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : " -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -mcpu=cortex-m0plus  -x assembler-with-cpp -MMD -MP -g"
+					"fragment" : " -mcpu=cortex-m0plus  -x assembler-with-cpp -MMD -MP -g"
 				}
 			],
 			"defines" : 
@@ -158,6 +175,10 @@
 			],
 			"includes" : 
 			[
+				{
+					"backtrace" : 5,
+					"path" : "E:/power_control/power_control/Core/Inc"
+				},
 				{
 					"backtrace" : 3,
 					"path" : "E:/power_control/power_control/cmake/stm32cubemx/../../Core/Inc"
@@ -199,7 +220,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3",
+				"fragment" : "-mcpu=cortex-m0plus  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3",
 				"role" : "flags"
 			},
 			{
@@ -253,14 +274,14 @@
 			"name" : "",
 			"sourceIndexes" : 
 			[
-				5
+				5,
+				6
 			]
 		},
 		{
 			"name" : "Object Libraries",
 			"sourceIndexes" : 
 			[
-				6,
 				7,
 				8,
 				9,
@@ -279,46 +300,52 @@
 				22,
 				23,
 				24,
-				25
+				25,
+				26
 			]
 		}
 	],
 	"sources" : 
 	[
 		{
-			"backtrace" : 5,
+			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"path" : "Core/Src/main.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 5,
+			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"path" : "Core/Src/stm32g0xx_it.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 5,
+			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"path" : "Core/Src/stm32g0xx_hal_msp.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 5,
+			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"path" : "Core/Src/sysmem.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 5,
+			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"path" : "Core/Src/syscalls.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 5,
+			"backtrace" : 6,
 			"compileGroupIndex" : 1,
 			"path" : "startup_stm32g0b1xx.s",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 7,
+			"path" : "Core/Src",
 			"sourceGroupIndex" : 1
 		},
 		{
