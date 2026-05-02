@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"E:/power_control/power_control/build/Debug/cmake_install.cmake",
+		"E:/power_control/power_control/build/Debug/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

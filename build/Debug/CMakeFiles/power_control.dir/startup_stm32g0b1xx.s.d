@@ -1,0 +1,2 @@
+CMakeFiles\power_control.dir\startup_stm32g0b1xx.s.obj: \
+ E:\power_control\power_control\startup_stm32g0b1xx.s
