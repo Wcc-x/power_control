@@ -15,13 +15,16 @@ uint8_t ADC_Bus21V_Keep3s_OK = 0;
 
 
 // 四个电机的数据
-extern motor_data_t motor[4];
+motor_data_t motor[4];
 uint32_t total_voltage;//四个电机电压总和，具体是什么可以自己改
 uint32_t measure_target_data;//这个是一定值，具体是什么自己填写
 
 volatile uint16_t top = 0;
 volatile uint16_t tail = 0;
 volatile can_pack FDCAN_RX_FIFO[FIFO_LENGTH];
+
+// ADC转换通道索引
+static uint8_t adc_channel_index = 0;
 
 void FDCAN_Filter_Init(FDCAN_HandleTypeDef* hfdcan){
     FDCAN_FilterTypeDef can_filter_init_structure;
@@ -63,7 +66,7 @@ void FDCAN_Receiver_IQRHandler(FDCAN_HandleTypeDef* hfdcan){
 uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data){
     if (top != tail){
         *CANID = FDCAN_RX_FIFO[top].canid;
-        memcpy(data, FDCAN_RX_FIFO[top].data, 8);
+        memcpy(data, (uint8_t*)FDCAN_RX_FIFO[top].data, 8);
         top = (top + 1) % FIFO_LENGTH;
         return 1;
     }
@@ -142,23 +145,25 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
   * @retval None
   */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-    uint32_t channel = HAL_ADC_GetCurrentChannel(hadc); // 返回当前转换的通道号，这个函数不好找，且看且珍惜
     uint32_t val = HAL_ADC_GetValue(hadc);
-    if (channel == ADC_CHANNEL_0) {
-        if(val >= V_BUS_THRESHOLD)
-                ADC_BusOver21V_Flag = 1;
-            else
-                ADC_BusOver21V_Flag = 0;
-        // IN0 处理
-    } else if (channel == ADC_CHANNEL_1) {
-        if(val >= V_BLD_THRESHOLD)
-                ADC_BldOver15V_Flag = 1;
-            else
-                ADC_BldOver15V_Flag = 0;
-        // IN1 处理
-    }
-    // ADC转换完成回调函数
     
+    // 根据通道索引处理对应通道的转换结果
+    if (adc_channel_index == 0) {
+        // 通道0 (PA0 - IN0)处理
+        if(val >= V_BUS_THRESHOLD)
+            ADC_BusOver21V_Flag = 1;
+        else
+            ADC_BusOver21V_Flag = 0;
+    } else if (adc_channel_index == 1) {
+        // 通道1 (PA1 - IN1)处理
+        if(val >= V_BLD_THRESHOLD)
+            ADC_BldOver15V_Flag = 1;
+        else
+            ADC_BldOver15V_Flag = 0;
+    }
+    
+    // 切换到下一个通道
+    adc_channel_index = (adc_channel_index + 1) % 2;
 }
 
 /* ADC 双通道阈值监控初始化（IN0 + IN1）*/
