@@ -27,7 +27,10 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+extern uint8_t ADC_BusOver21V_Flag;
+extern uint8_t ADC_BldOver15V_Flag;
+extern uint8_t ADC_Bus21V_Keep3s_OK;
+extern uint32_t total_voltage;//四个电机电压总和，具体是什么可以自己改
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -49,7 +52,9 @@ TIM_HandleTypeDef htim14;
 TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN PV */
-
+extern uint8_t ADC_BusOver21V_Flag;
+extern uint8_t ADC_BldOver15V_Flag;
+extern uint8_t ADC_Bus21V_Keep3s_OK;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,11 +111,8 @@ int main(void)
 // ADC采样
 HAL_ADC_Start_IT(&hadc1);
 HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
-
-HAL_ADC_Start_IT(&hadc1);           // 启动ADC中断模式
+HAL_ADC_ConvCpltCallback(&hadc1);//传入实例指针
 HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn); // 使能中断
-
-HAL_NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
 //启动PWM发生器
 
 // TIM14（系统定时控制）
@@ -128,7 +130,7 @@ FDCAN_Init(&hfdcan2);
   while (1)
   {
     /* USER CODE END WHILE */
-
+  ADC_InitDualWatchMonitor(&hadc1);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -396,12 +398,19 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, BLD_Pin|BUSSER_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : BLD_Pin BUSSER_Pin */
-  GPIO_InitStruct.Pin = BLD_Pin|BUSSER_Pin;
+  /*Configure GPIO pin : BLD_Pin */
+  GPIO_InitStruct.Pin = BLD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(BLD_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BUSSER_Pin */
+  GPIO_InitStruct.Pin = BUSSER_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(BUSSER_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;

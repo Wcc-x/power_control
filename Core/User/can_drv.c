@@ -1,8 +1,23 @@
-#pragma once
+ 
 #include "can_drv.h"
 #include "stm32g0xx_hal_fdcan.h"
 #include <string.h>
 #include "stm32g0xx_hal_conf.h"
+#include "main.h"
+//定义adc转换
+#define V_BUS_THRESHOLD     2580    // IN0 母线 >21V
+#define V_BLD_THRESHOLD     1861    // IN1 泄放 >1.5V
+
+//ADC全局标志
+uint8_t ADC_BusOver21V_Flag = 0;
+uint8_t ADC_BldOver15V_Flag = 0;
+uint8_t ADC_Bus21V_Keep3s_OK = 0;
+
+
+// 四个电机的数据
+extern motor_data_t motor[4];
+uint32_t total_voltage;//四个电机电压总和，具体是什么可以自己改
+uint32_t measure_target_data;//这个是一定值，具体是什么自己填写
 
 volatile uint16_t top = 0;
 volatile uint16_t tail = 0;
@@ -37,12 +52,11 @@ void FDCAN_Receiver_IQRHandler(FDCAN_HandleTypeDef* hfdcan){
     if (RxHeader.DataLength == FDCAN_DLC_BYTES_8){
         dataPack.canid = RxHeader.Identifier;
         memcpy(dataPack.data, RxData, 8);
-        FDCAN_RX_FIFO[tail] = dataPack;
         FDCAN_RX_FIFO[tail] = dataPack;           // 写入当前尾部
-    tail = (tail + 1) % FIFO_LENGTH;          // 尾部指针后移
-    if (tail == top) {                        // 如果缓冲区已满
-    top = (top + 1) % FIFO_LENGTH;        // 覆盖最旧的数据（丢弃一帧）
-    }
+        tail = (tail + 1) % FIFO_LENGTH;          // 尾部指针后移
+        if (tail == top) {                        // 如果缓冲区已满
+        top = (top + 1) % FIFO_LENGTH;        // 覆盖最旧的数据（丢弃一帧）
+        }
     }
 }
 
@@ -52,7 +66,8 @@ uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data){
         memcpy(data, FDCAN_RX_FIFO[top].data, 8);
         top = (top + 1) % FIFO_LENGTH;
         return 1;
-    }else{
+    }
+    else{
         return 0;
     }
 }
@@ -68,6 +83,43 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != 0)
     {
         FDCAN_Receiver_IQRHandler(hfdcan);
+        uint32_t canid;
+        uint8_t data[8];
+        while (FDCAN_GetMessage(&canid, data))
+        {
+            // 根据CANID区分电机
+            switch(canid)
+            {
+                case 0x101:  // 电机1
+                    motor[0].voltage = (data[0] << 8) | data[1];
+                    motor[0].current = (data[2] << 8) | data[3];
+                    motor[0].temperature = data[4];
+                    motor[0].status = data[5];
+                    break;
+                    
+                case 0x102:  // 电机2
+                    motor[1].voltage = (data[0] << 8) | data[1];
+                    motor[1].current = (data[2] << 8) | data[3];
+                    motor[1].temperature = data[4];
+                    motor[1].status = data[5];
+                    break;
+                    
+                case 0x103:  // 电机3
+                    motor[2].voltage = (data[0] << 8) | data[1];
+                    motor[2].current = (data[2] << 8) | data[3];
+                    motor[2].temperature = data[4];
+                    motor[2].status = data[5];
+                    break;
+                    
+                case 0x104:  // 电机4
+                    motor[3].voltage = (data[0] << 8) | data[1];
+                    motor[3].current = (data[2] << 8) | data[3];
+                    motor[3].temperature = data[4];
+                    motor[3].status = data[5];
+                    break;
+            }
+        }
+        total_voltage = motor[0].voltage + motor[1].voltage + motor[2].voltage + motor[3].voltage;
     }
     
     if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) != 0)
@@ -90,10 +142,39 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
   * @retval None
   */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-    
+    uint32_t channel = HAL_ADC_GetCurrentChannel(hadc); // 返回当前转换的通道号，这个函数不好找，且看且珍惜
+    uint32_t val = HAL_ADC_GetValue(hadc);
+    if (channel == ADC_CHANNEL_0) {
+        if(val >= V_BUS_THRESHOLD)
+                ADC_BusOver21V_Flag = 1;
+            else
+                ADC_BusOver21V_Flag = 0;
+        // IN0 处理
+    } else if (channel == ADC_CHANNEL_1) {
+        if(val >= V_BLD_THRESHOLD)
+                ADC_BldOver15V_Flag = 1;
+            else
+                ADC_BldOver15V_Flag = 0;
+        // IN1 处理
+    }
     // ADC转换完成回调函数
-    // 可以在此处理ADC采样数据，例如读取ADC值并进行相应的处理
+    
 }
 
+/* ADC 双通道阈值监控初始化（IN0 + IN1）*/
+void ADC_InitDualWatchMonitor(ADC_HandleTypeDef* hadc)
+{
+    // 开启 ADC 中断转换（自动扫描 IN0 → IN1 → IN0 → IN1）
+    HAL_ADC_Start_IT(hadc);
+    if(ADC_Bus21V_Keep3s_OK == 1 && total_voltage >= measure_target_data)
+    {
+        // IN0 大于21V 持续3秒
+        
+    }
 
+    if(ADC_BldOver15V_Flag == 1)
+    {
+        // IN1 大于1.5V
+    }
+}
 

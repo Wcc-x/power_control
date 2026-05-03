@@ -4,6 +4,17 @@
 
 #define FIFO_LENGTH 128
 
+// 电机数据结构
+typedef struct
+{
+    uint16_t voltage;      // 电压
+    uint16_t current;      // 电流
+    uint16_t temperature;  // 温度
+    uint16_t status;       // 状态
+} motor_data_t;
+
+// 四个电机的数据
+extern motor_data_t motor[4];  // motor[0-3]代表4个电机
 typedef struct
 {   
     uint32_t canid;
@@ -22,3 +33,7 @@ extern volatile uint16_t top;
 extern volatile uint16_t tail;
 extern volatile can_pack FDCAN_RX_FIFO[FIFO_LENGTH];
 uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data);
+
+//ADC轮询函数
+void ADC_CheckBusVolt3s_Task(void);
+void ADC_InitDualWatchMonitor(ADC_HandleTypeDef* hadc);
