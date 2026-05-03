@@ -36,7 +36,7 @@ void FDCAN_Receiver_IQRHandler(FDCAN_HandleTypeDef* hfdcan){
         dataPack.canid = RxHeader.Identifier;
         memcpy(dataPack.data, RxData, 8);
         FDCAN_RX_FIFO[tail] = dataPack;
-        if ((top + FIFO_LENGTH - tail) % FIFO_LENGTH > 1){
+        if ((top == tail) || ((top + FIFO_LENGTH - tail) % FIFO_LENGTH > 1)){
             tail = (tail + 1) % FIFO_LENGTH;
         }else{
             top = (top + 1) % FIFO_LENGTH;
