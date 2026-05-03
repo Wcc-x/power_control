@@ -1,6 +1,8 @@
+#pragma once
 #include "can_drv.h"
 #include "stm32g0xx_hal_fdcan.h"
 #include <string.h>
+#include "stm32g0xx_hal_conf.h"
 
 volatile uint16_t top = 0;
 volatile uint16_t tail = 0;
@@ -36,12 +38,11 @@ void FDCAN_Receiver_IQRHandler(FDCAN_HandleTypeDef* hfdcan){
         dataPack.canid = RxHeader.Identifier;
         memcpy(dataPack.data, RxData, 8);
         FDCAN_RX_FIFO[tail] = dataPack;
-        if ((top + FIFO_LENGTH - tail) % FIFO_LENGTH > 1){
-            tail = (tail + 1) % FIFO_LENGTH;
-        }else{
-            top = (top + 1) % FIFO_LENGTH;
-            tail = (tail + 1) % FIFO_LENGTH;
-        }
+        FDCAN_RX_FIFO[tail] = dataPack;           // 写入当前尾部
+    tail = (tail + 1) % FIFO_LENGTH;          // 尾部指针后移
+    if (tail == top) {                        // 如果缓冲区已满
+    top = (top + 1) % FIFO_LENGTH;        // 覆盖最旧的数据（丢弃一帧）
+    }
     }
 }
 
@@ -55,3 +56,44 @@ uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data){
         return 0;
     }
 }
+
+/**
+  * @brief FDCAN Rx FIFO 0新消息回调
+  * @param hfdcan: FDCAN句柄
+  * @param RxFifo0ITs: 中断类型
+  * @retval None
+  */
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+    if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != 0)
+    {
+        FDCAN_Receiver_IQRHandler(hfdcan);
+    }
+    
+    if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) != 0)
+    {
+        // FIFO0满中断处理（可选）
+        // __HAL_FDCAN_CLEAR_FLAG(hfdcan, FDCAN_FLAG_FF0);
+    }
+    
+    if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_MESSAGE_LOST) != 0)
+    {
+        // 消息丢失中断处理（可选）
+        // 可以在此添加错误计数或警告标志
+    }
+}
+
+/**
+  * @brief FDCAN Rx FIFO 1新消息回调
+  * @param hfdcan: FDCAN句柄
+  * @param RxFifo1ITs: 中断类型
+  * @retval None
+  */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+    
+    // ADC转换完成回调函数
+    // 可以在此处理ADC采样数据，例如读取ADC值并进行相应的处理
+}
+
+
+
