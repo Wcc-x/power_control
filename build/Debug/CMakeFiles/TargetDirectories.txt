@@ -1,0 +1,6 @@
+C:/Bai.Black/STM32/power_control/build/Debug/CMakeFiles/power_control.dir
+C:/Bai.Black/STM32/power_control/build/Debug/CMakeFiles/edit_cache.dir
+C:/Bai.Black/STM32/power_control/build/Debug/CMakeFiles/rebuild_cache.dir
+C:/Bai.Black/STM32/power_control/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+C:/Bai.Black/STM32/power_control/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Bai.Black/STM32/power_control/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
