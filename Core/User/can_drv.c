@@ -4,6 +4,7 @@
 
 volatile uint16_t top = 0;
 volatile uint16_t tail = 0;
+volatile can_pack FDCAN_RX_FIFO[FIFO_LENGTH];
 
 void FDCAN_Filter_Init(FDCAN_HandleTypeDef* hfdcan){
     FDCAN_FilterTypeDef can_filter_init_structure;
