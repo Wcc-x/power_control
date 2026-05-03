@@ -1,4 +1,0 @@
-C:/Bai.Black/STM32/power_control/Core/User/can_drv.c:8:6:FDCAN_Filter_Init	48	static
-C:/Bai.Black/STM32/power_control/Core/User/can_drv.c:24:6:FDCAN_Init	16	static
-C:/Bai.Black/STM32/power_control/Core/User/can_drv.c:29:6:FDCAN_Receiver_IQRHandler	88	static
-C:/Bai.Black/STM32/power_control/Core/User/can_drv.c:47:9:FDCAN_GetMessage	16	static

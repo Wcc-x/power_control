@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"C:/Bai.Black/STM32/power_control/build/Debug/cmake_install.cmake",
-		"C:/Bai.Black/STM32/power_control/build/Debug/cmake/stm32cubemx/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

@@ -1,0 +1,14 @@
+# 构建目录
+build/
+Debug/
+Release/
+CMakeFiles/
+cmake-*
+*.cmake
+Makefile
+*.i
+*.s
+*.o
+*.elf
+*.bin
+*.hex
