@@ -7,10 +7,10 @@
 // 电机数据结构
 typedef struct
 {
-    uint16_t voltage;      // 电压
-    uint16_t current;      // 电流
-    uint16_t temperature;  // 温度
-    uint16_t status;       // 状态
+    uint16_t angle;      // 角度
+    uint16_t speed_rpm;      // 转速
+    uint16_t current;    // 电流,单位10mA
+    uint8_t temperature; // 温度
 } motor_data_t;
 
 // 四个电机的数据

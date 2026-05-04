@@ -19,15 +19,10 @@ extern TIM_HandleTypeDef htim16;
 #define V_BLD_UNDER_THRESHOLD  1700 // IN1 泄放 <1.5V
 uint8_t overvolt_flag=0;
 uint8_t overvolt_count=0;
-//ADC全局标志
-uint8_t ADC_BusOver21V_Flag = 0;
-uint8_t ADC_BldOver15V_Flag = 0;
-uint8_t ADC_Bus21V_Keep3s_OK = 0;
-
 
 // 四个电机的数据
 motor_data_t motor[4];
-uint32_t total_voltage;//四个电机电压总和，具体是什么可以自己改
+uint32_t total_current;//四个电机电流总和，具体是什么可以自己改
 uint32_t measure_target_data;//这个是一定值，具体是什么自己填写
 
 volatile uint16_t top = 0;
@@ -104,60 +99,54 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
             // 根据CANID区分电机
             switch(canid)
             {
-                case 0x101:  // 电机1
-                    motor[0].voltage = (data[0] << 8) | data[1];
-                    motor[0].current = (data[2] << 8) | data[3];
-                    motor[0].temperature = data[4];
-                    motor[0].status = data[5];
+                case 0x201:  // 电机1
+                    motor[0].angle = (uint16_t)((data[0] << 8) | data[1]);
+                    motor[0].speed_rpm = (uint16_t)((data[2] << 8) | data[3]);
+                    motor[0].current = (uint16_t)((data[4] << 8) | data[5]);
+                    motor[0].temperature = (uint8_t)data[6];
                     break;
                     
-                case 0x102:  // 电机2
-                    motor[1].voltage = (data[0] << 8) | data[1];
-                    motor[1].current = (data[2] << 8) | data[3];
-                    motor[1].temperature = data[4];
-                    motor[1].status = data[5];
+                case 0x202:  // 电机2
+                    motor[1].angle = (uint16_t)((data[0] << 8) | data[1]);
+                    motor[1].speed_rpm = (int16_t)((data[2] << 8) | data[3]);
+                    motor[1].current = (int16_t)((data[4] << 8) | data[5]);
+                    motor[1].temperature = (uint8_t)data[6];
                     break;
                     
-                case 0x103:  // 电机3
-                    motor[2].voltage = (data[0] << 8) | data[1];
-                    motor[2].current = (data[2] << 8) | data[3];
-                    motor[2].temperature = data[4];
-                    motor[2].status = data[5];
+                case 0x203:  // 电机3
+                    motor[2].angle = (uint16_t)((data[0] << 8) | data[1]);
+                    motor[2].speed_rpm = (int16_t)((data[2] << 8) | data[3]);
+                    motor[2].current = (int16_t)((data[4] << 8) | data[5]);
+                    motor[2].temperature = (uint8_t)data[6];
                     break;
                     
-                case 0x104:  // 电机4
-                    motor[3].voltage = (data[0] << 8) | data[1];
-                    motor[3].current = (data[2] << 8) | data[3];
-                    motor[3].temperature = data[4];
-                    motor[3].status = data[5];
+                case 0x204:  // 电机4
+                    motor[3].angle = (uint16_t)((data[0] << 8) | data[1]);
+                    motor[3].speed_rpm = (int16_t)((data[2] << 8) | data[3]);
+                    motor[3].current = (int16_t)((data[4] << 8) | data[5]);
+                    motor[3].temperature = (uint8_t)data[6];
                     break;
             }
         }
-        total_voltage = motor[0].voltage + motor[1].voltage + motor[2].voltage + motor[3].voltage;
+        total_current = motor[0].current + motor[1].current + motor[2].current + motor[3].current;
     }
     
     if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) != 0)
     {
-        // FIFO0满中断处理（可选）
+        // FIFO0满中断处理,函数库自己带的，后续再修改吧
         // __HAL_FDCAN_CLEAR_FLAG(hfdcan, FDCAN_FLAG_FF0);
     }
     
     if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_MESSAGE_LOST) != 0)
     {
-        // 消息丢失中断处理（可选）
+        // 消息丢失中断处理，同上
         // 可以在此添加错误计数或警告标志
     }
 }
 
 
-
-
-
-
-
 // ADC转换完成回调
-// 扫描模式下，每转换一个通道就调用一次此回调，这个中断是我给ai写的，因为我自己写hal的无法解决函数库报错！！！
-
+// 扫描模式下，每转换一个通道就调用一次此回调，这个中断框架是我给ai写的（我想不到这个rank轮询方式），但是逻辑是我自己写的。
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if(hadc->Instance == ADC1) // 多ADC时要判断
@@ -175,13 +164,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
                 {
                     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
                 }                                                                                                                                                                                                                 
-                overvolt_flag = 1;
+
             }
             else if(val < V_BUS_UNDER_THRESHOLD)
             {
-                if(val<=V_BUS_UNDER_THRESHOID_PRO)
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+                HAL_TIM_Base_Stop_IT(&htim14);
+                overvolt_flag = 0;
+                __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1199); // 将PWM占空比设置为100%，开启MOSFET,此处还需要修改后续
             }
+            else if(val<=V_BUS_UNDER_THRESHOID_PRO&&val>=V_BUS_THRESHOLD)
+                {
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+                }
             adc_conversion_count = 1;
         }
         else if (adc_conversion_count == 1)  // 第二次转换 = RANK2 = ADC_CHANNEL_1 (PA1 - 泄放电压BLD_FB)
@@ -190,6 +184,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
             if(val >= V_BLD_THRESHOLD)
             {
                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+               
             }
             else if(val < V_BLD_UNDER_THRESHOLD)
             {
@@ -204,20 +199,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM14) // 判断是哪个定时器触发的中断
     {
+        if(overvolt_flag == 1)
+        {
         overvolt_count++;
-        if (overvolt_count >= 3000&&total_voltage>=measure_target_data) // 3秒钟（假设定时器频率为10ms）
+        
+        if (overvolt_count >= 3000&&total_current>=measure_target_data) // 3秒钟（假设定时器频率为10ms）
         {
             __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 0); // 将PWM占空比设置为0，关闭MOSFET,此处还需要修改后续
+            overvolt_count=3000;//保持在3000，防止溢出
         }
-         else 
-        {
-            __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1199); // 将PWM占空比设置为50%，保持MOSFET导通，此处还需要修改后续
-        }
-        {
+         
+    }
 
-
-        } // 3秒钟（假设定
-        // 这里可以添加定时器中断处理代码，例如定时检查电压状态等
     }
 }
     
