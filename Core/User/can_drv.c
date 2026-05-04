@@ -170,6 +170,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
             {
                 HAL_TIM_Base_Stop_IT(&htim14);
                 overvolt_flag = 0;
+                overvolt_count = 0;
                 __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1199); // 将PWM占空比设置为100%，开启MOSFET,此处还需要修改后续
             }
             else if(val<=V_BUS_UNDER_THRESHOID_PRO&&val>=V_BUS_THRESHOLD)
