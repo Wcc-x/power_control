@@ -4,11 +4,21 @@
 #include <string.h>
 #include "stm32g0xx_hal_conf.h"
 #include "main.h"
-//定义adc转换
+
+// 外部句柄声明
+extern TIM_HandleTypeDef htim14;
+extern ADC_HandleTypeDef hadc1;
+extern FDCAN_HandleTypeDef hfdcan2;
+extern TIM_HandleTypeDef htim16;
+//定义adc转换,默认母线电压3.3v
+#define V_BUS_THRESHOID_PRO 4095 // 母线 >30v
+#define V_BUS_UNDER_THRESHOID_PRO 3095 //母线 <30v
 #define V_BUS_THRESHOLD     2580    // IN0 母线 >21V
 #define V_BUS_UNDER_THRESHOLD  2460 // IN0 母线 <21V
 #define V_BLD_THRESHOLD     1861    // IN1 泄放 >1.5V
 #define V_BLD_UNDER_THRESHOLD  1700 // IN1 泄放 <1.5V
+uint8_t overvolt_flag=0;
+uint8_t overvolt_count=0;
 //ADC全局标志
 uint8_t ADC_BusOver21V_Flag = 0;
 uint8_t ADC_BldOver15V_Flag = 0;
@@ -24,8 +34,8 @@ volatile uint16_t top = 0;
 volatile uint16_t tail = 0;
 volatile can_pack FDCAN_RX_FIFO[FIFO_LENGTH];
 
-// ADC转换通道索引
-static uint8_t adc_channel_index = 0;
+// ADC转换计数器（用于区分RANK1和RANK2）
+static uint8_t adc_conversion_count = 0;
 
 void FDCAN_Filter_Init(FDCAN_HandleTypeDef* hfdcan){
     FDCAN_FilterTypeDef can_filter_init_structure;
@@ -145,29 +155,69 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 
 
-// 这是你已经写好的回调，中断完成后会自动进入这里
+// ADC转换完成回调
+// 扫描模式下，每转换一个通道就调用一次此回调，这个中断是我给ai写的，因为我自己写hal的无法解决函数库报错！！！
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if(hadc->Instance == ADC1) // 多ADC时要判断
     {
-        uint32_t channel = HAL_ADC_GetCurrentChannel(hadc);
         uint32_t val = HAL_ADC_GetValue(hadc);
         
-        // 你的通道判断和逻辑
-        //channel0是母线电压，1是实际电压
-        if (channel == ADC_CHANNEL_0) {
-            if(val >= V_BUS_THRESHOLD){
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+        if (adc_conversion_count == 0)  // 第一次转换 = RANK1 = ADC_CHANNEL_0 (PA0 - 母线电压V_BUS_FB)
+        {
+            // 母线电压处理
+            if(val >= V_BUS_THRESHOLD)
+            {
+                HAL_TIM_Base_Start_IT(&htim14);
+                overvolt_flag = 1;
+                if(val>=V_BUS_THRESHOID_PRO)
+                {
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+                }                                                                                                                                                                                                                 
+                overvolt_flag = 1;
             }
-            else if(val < V_BUS_UNDER_THRESHOLD){
+            else if(val < V_BUS_UNDER_THRESHOLD)
+            {
+                if(val<=V_BUS_UNDER_THRESHOID_PRO)
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
             }
+            adc_conversion_count = 1;
         }
-        else if (channel == ADC_CHANNEL_1) {
-            
-            // 处理BLD电压
+        else if (adc_conversion_count == 1)  // 第二次转换 = RANK2 = ADC_CHANNEL_1 (PA1 - 泄放电压BLD_FB)
+        {
+            // BLD泄放电压处理
+            if(val >= V_BLD_THRESHOLD)
+            {
+               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+            }
+            else if(val < V_BLD_UNDER_THRESHOLD)
+            {
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+            }
+            adc_conversion_count = 0;  // 重置计数器，等待下一轮转换
         }
+    }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM14) // 判断是哪个定时器触发的中断
+    {
+        overvolt_count++;
+        if (overvolt_count >= 3000&&total_voltage>=measure_target_data) // 3秒钟（假设定时器频率为10ms）
+        {
+            __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 0); // 将PWM占空比设置为0，关闭MOSFET,此处还需要修改后续
+        }
+         else 
+        {
+            __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1199); // 将PWM占空比设置为50%，保持MOSFET导通，此处还需要修改后续
+        }
+        {
+
+
+        } // 3秒钟（假设定
+        // 这里可以添加定时器中断处理代码，例如定时检查电压状态等
     }
 }
     
