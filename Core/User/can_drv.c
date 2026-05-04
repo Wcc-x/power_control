@@ -52,7 +52,7 @@ void FDCAN_Filter_Init(FDCAN_HandleTypeDef* hfdcan){
     // 全局滤波器, 直接拒绝不符合规则的标准数据帧, 扩展数据帧, 标准遥控帧, 扩展遥控帧
     HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
 }
-
+//FDCAN初始化函数，启动FDCAN并激活接收中断
 void FDCAN_Init(FDCAN_HandleTypeDef* hfdcan){
     HAL_FDCAN_Start(hfdcan);
     HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
