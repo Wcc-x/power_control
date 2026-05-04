@@ -64,6 +64,7 @@ NVIC.NonMaskableInt_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 NVIC.PendSV_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 NVIC.SVC_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:true
 NVIC.SysTick_IRQn=true\:3\:0\:false\:false\:true\:false\:true\:false
+NVIC.TIM14_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.TIM16_FDCAN_IT0_IRQn=true\:1\:0\:true\:false\:true\:true\:true\:true
 NVIC.TIM17_FDCAN_IT1_IRQn=true\:1\:0\:true\:false\:true\:true\:true\:true
 PA0.GPIOParameters=GPIO_Label

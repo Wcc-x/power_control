@@ -116,6 +116,7 @@ HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn); // 使能中断
 HAL_TIM_PWM_Init(&htim16);
 HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1); // 启动TIM
 // TIM14（系统定时控制）
+HAL_TIM_Base_Init(&htim16);
 HAL_TIM_Base_Start_IT(&htim14);
 HAL_NVIC_EnableIRQ(TIM14_IRQn);
 
@@ -125,7 +126,7 @@ FDCAN_Init(&hfdcan2);
 
 for(int i=0;i<3000;i++)
 {
-  int compare_value = 2.50;
+  int compare_value =i/ 2.50;
     __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, compare_value); 
 }
   /* USER CODE END 2 */
