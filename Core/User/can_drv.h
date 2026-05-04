@@ -29,6 +29,8 @@ void FDCAN_Receiver_IQRHandler(FDCAN_HandleTypeDef* hfdcan);
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs);
 void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *hfdcan);
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc);
+void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc);
+
 extern volatile uint16_t top;
 extern volatile uint16_t tail;
 extern volatile can_pack FDCAN_RX_FIFO[FIFO_LENGTH];
@@ -36,4 +38,3 @@ uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data);
 
 //ADC轮询函数
 void ADC_CheckBusVolt3s_Task(void);
-void ADC_InitDualWatchMonitor(ADC_HandleTypeDef* hadc);

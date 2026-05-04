@@ -114,7 +114,8 @@ HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
 HAL_ADC_ConvCpltCallback(&hadc1);//传入实例指针
 HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn); // 使能中断
 //启动PWM发生器
-
+HAL_TIM_PWM_Init(&htim16);
+HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1); // 启动TIM
 // TIM14（系统定时控制）
 HAL_TIM_Base_Start_IT(&htim14);
 HAL_NVIC_EnableIRQ(TIM14_IRQn);
@@ -123,6 +124,11 @@ HAL_NVIC_EnableIRQ(TIM14_IRQn);
 FDCAN_Filter_Init(&hfdcan2);
 FDCAN_Init(&hfdcan2);
 
+for(int i=0;i<3000;i++)
+{
+  int compare_value = 
+    _HAK_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1000); // 1ms中断
+}
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -130,7 +136,7 @@ FDCAN_Init(&hfdcan2);
   while (1)
   {
     /* USER CODE END WHILE */
-  ADC_InitDualWatchMonitor(&hadc1);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -194,6 +200,7 @@ static void MX_ADC1_Init(void)
 
   /* USER CODE END ADC1_Init 0 */
 
+  ADC_AnalogWDGConfTypeDef AnalogWDGConfig = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
@@ -226,6 +233,19 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
 
+  /** Configure Analog WatchDog 1
+  */
+  AnalogWDGConfig.WatchdogNumber = ADC_ANALOGWATCHDOG_1;
+  AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
+  AnalogWDGConfig.Channel = ADC_CHANNEL_0;
+  AnalogWDGConfig.ITMode = ENABLE;
+  AnalogWDGConfig.HighThreshold = 2580;
+  AnalogWDGConfig.LowThreshold = 0;
+  if (HAL_ADC_AnalogWDGConfig(&hadc1, &AnalogWDGConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   /** Configure Regular Channel
   */
   sConfig.Channel = ADC_CHANNEL_0;
@@ -238,8 +258,19 @@ static void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
+  sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the regular channel to be monitored by WatchDog 2 or 3
+  */
+  AnalogWDGConfig.WatchdogNumber = ADC_ANALOGWATCHDOG_2;
+  AnalogWDGConfig.Channel = ADC_CHANNEL_1;
+  AnalogWDGConfig.HighThreshold = 1861;
+  if (HAL_ADC_AnalogWDGConfig(&hadc1, &AnalogWDGConfig) != HAL_OK)
   {
     Error_Handler();
   }

@@ -6,8 +6,9 @@
 #include "main.h"
 //定义adc转换
 #define V_BUS_THRESHOLD     2580    // IN0 母线 >21V
+#define V_BUS_UNDER_THRESHOLD  2460 // IN0 母线 <21V
 #define V_BLD_THRESHOLD     1861    // IN1 泄放 >1.5V
-
+#define V_BLD_UNDER_THRESHOLD  1700 // IN1 泄放 <1.5V
 //ADC全局标志
 uint8_t ADC_BusOver21V_Flag = 0;
 uint8_t ADC_BldOver15V_Flag = 0;
@@ -76,7 +77,7 @@ uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data){
 }
 
 /**
-  * @brief FDCAN Rx FIFO 0新消息回调
+  * @brief FDCAN Rx FIFO 0新消息回调,同时计算电压总和
   * @param hfdcan: FDCAN句柄
   * @param RxFifo0ITs: 中断类型
   * @retval None
@@ -138,48 +139,35 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     }
 }
 
-/**
-  * @brief FDCAN Rx FIFO 1新消息回调
-  * @param hfdcan: FDCAN句柄
-  * @param RxFifo1ITs: 中断类型
-  * @retval None
-  */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-    uint32_t val = HAL_ADC_GetValue(hadc);
-    
-    // 根据通道索引处理对应通道的转换结果
-    if (adc_channel_index == 0) {
-        // 通道0 (PA0 - IN0)处理
-        if(val >= V_BUS_THRESHOLD)
-            ADC_BusOver21V_Flag = 1;
-        else
-            ADC_BusOver21V_Flag = 0;
-    } else if (adc_channel_index == 1) {
-        // 通道1 (PA1 - IN1)处理
-        if(val >= V_BLD_THRESHOLD)
-            ADC_BldOver15V_Flag = 1;
-        else
-            ADC_BldOver15V_Flag = 0;
-    }
-    
-    // 切换到下一个通道
-    adc_channel_index = (adc_channel_index + 1) % 2;
-}
 
-/* ADC 双通道阈值监控初始化（IN0 + IN1）*/
-void ADC_InitDualWatchMonitor(ADC_HandleTypeDef* hadc)
+
+
+
+
+
+// 这是你已经写好的回调，中断完成后会自动进入这里
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-    // 开启 ADC 中断转换（自动扫描 IN0 → IN1 → IN0 → IN1）
-    HAL_ADC_Start_IT(hadc);
-    if(ADC_Bus21V_Keep3s_OK == 1 && total_voltage >= measure_target_data)
+    if(hadc->Instance == ADC1) // 多ADC时要判断
     {
-        // IN0 大于21V 持续3秒
+        uint32_t channel = HAL_ADC_GetCurrentChannel(hadc);
+        uint32_t val = HAL_ADC_GetValue(hadc);
         
-    }
-
-    if(ADC_BldOver15V_Flag == 1)
-    {
-        // IN1 大于1.5V
+        // 你的通道判断和逻辑
+        //channel0是母线电压，1是实际电压
+        if (channel == ADC_CHANNEL_0) {
+            if(val >= V_BUS_THRESHOLD){
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+            }
+            else if(val < V_BUS_UNDER_THRESHOLD){
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+            }
+        }
+        else if (channel == ADC_CHANNEL_1) {
+            
+            // 处理BLD电压
+        }
     }
 }
-
+    
