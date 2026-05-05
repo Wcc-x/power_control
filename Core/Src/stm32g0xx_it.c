@@ -178,14 +178,6 @@ void TIM14_IRQHandler(void)
 void TIM16_FDCAN_IT0_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM16_FDCAN_IT0_IRQn 0 */
-  
-  // 处理FDCAN2 FIFO0新消息中断
-  if ((hfdcan2.Instance->IR & FDCAN_IR_RF0N) != 0)
-  {
-    HAL_FDCAN_RxFifo0Callback(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE);
-    hfdcan2.Instance->IR |= FDCAN_IR_RF0N;  // 清除中断标志
-  }
-  
   /* USER CODE END TIM16_FDCAN_IT0_IRQn 0 */
   HAL_TIM_IRQHandler(&htim16);
   HAL_FDCAN_IRQHandler(&hfdcan2);
