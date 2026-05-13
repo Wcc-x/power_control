@@ -18,8 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "can_drv.h"
-#include "stm32g0xx_hal.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -112,9 +111,7 @@ int main(void)
 HAL_ADC_Start_IT(&hadc1);
 HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
 HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn); // 使能中断
-//启动PWM发生器
-HAL_TIM_PWM_Init(&htim16);
-HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1); // 启动TIM
+
 // TIM14（系统定时控制）
 HAL_TIM_Base_Init(&htim14);
 HAL_TIM_Base_Start_IT(&htim14);
@@ -124,11 +121,9 @@ HAL_NVIC_EnableIRQ(TIM14_IRQn);
 FDCAN_Filter_Init(&hfdcan2);
 FDCAN_Init(&hfdcan2);
 
-for(int i=0;i<3000;i++)
-{
-  int compare_value =i/ 2.50;
-    __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, compare_value); 
-}
+// 先设置比较值，再启动PWM（避免启动时占空比为0）
+__HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 240);
+HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1); // 启动TIM
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -180,7 +175,7 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
@@ -350,7 +345,7 @@ static void MX_TIM16_Init(void)
   htim16.Instance = TIM16;
   htim16.Init.Prescaler = 1;
   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim16.Init.Period = 1199;
+  htim16.Init.Period = 249;
   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim16.Init.RepetitionCounter = 0;
   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -405,8 +400,8 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */

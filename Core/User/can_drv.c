@@ -11,15 +11,15 @@ extern ADC_HandleTypeDef hadc1;
 extern FDCAN_HandleTypeDef hfdcan2;
 extern TIM_HandleTypeDef htim16;
 //定义adc转换,默认母线电压3.3v
-#define V_BUS_THRESHOID_PRO 4095 // 母线 >30v
+#define V_BUS_THRESHOID_PRO 3600 // 母线 >30v
 #define V_BUS_UNDER_THRESHOID_PRO 3095 //母线 <30v
 #define V_BUS_THRESHOLD     2580    // IN0 母线 >21V
 #define V_BUS_UNDER_THRESHOLD  2460 // IN0 母线 <21V
 #define V_BLD_THRESHOLD     1861    // IN1 泄放 >1.5V
 #define V_BLD_UNDER_THRESHOLD  1700 // IN1 泄放 <1.5V
-uint8_t overvolt_flag=0;
-uint8_t overvolt_count=0;
-
+uint32_t overvolt_flag=0;
+uint32_t overvolt_count=0;
+volatile uint32_t ADC_measure = 0;
 // 四个电机的数据
 motor_data_t motor[4];
 uint32_t total_current;//四个电机电流总和，具体是什么可以自己改
@@ -152,7 +152,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     if(hadc->Instance == ADC1) // 多ADC时要判断
     {
         uint32_t val = HAL_ADC_GetValue(hadc);
-        
+        ADC_measure = val;
+    
         if (adc_conversion_count == 0)  // 第一次转换 = RANK1 = ADC_CHANNEL_0 (PA0 - 母线电压V_BUS_FB)
         {
             // 母线电压处理
@@ -163,7 +164,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
                 if(val>=V_BUS_THRESHOID_PRO)
                 {
                     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-                }                                                                                                                                                                                                                 
+                }     
+                 else if(val<=V_BUS_UNDER_THRESHOID_PRO)
+                {
+                    // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+                }                                                                                                                                                                                                            
 
             }
             else if(val < V_BUS_UNDER_THRESHOLD)
@@ -171,12 +176,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
                 HAL_TIM_Base_Stop_IT(&htim14);
                 overvolt_flag = 0;
                 overvolt_count = 0;
-                __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1199); // 将PWM占空比设置为100%，开启MOSFET,此处还需要修改后续
+               // __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 1199); // 将PWM占空比设置为100%，开启MOSFET,此处还需要修改后续
             }
-            else if(val<=V_BUS_UNDER_THRESHOID_PRO&&val>=V_BUS_THRESHOLD)
-                {
-                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-                }
+            
             adc_conversion_count = 1;
         }
         else if (adc_conversion_count == 1)  // 第二次转换 = RANK2 = ADC_CHANNEL_1 (PA1 - 泄放电压BLD_FB)
@@ -184,12 +186,12 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
             // BLD泄放电压处理
             if(val >= V_BLD_THRESHOLD)
             {
-               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+            //    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
                
             }
             else if(val < V_BLD_UNDER_THRESHOLD)
             {
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+                // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
             }
             adc_conversion_count = 0;  // 重置计数器，等待下一轮转换
         }
@@ -206,7 +208,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         
         if (overvolt_count >= 3000&&total_current>=measure_target_data) // 3秒钟（假设定时器频率为10ms）
         {
-            __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 0); // 将PWM占空比设置为0，关闭MOSFET,此处还需要修改后续
+            // __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 0); // 将PWM占空比设置为0，关闭MOSFET,此处还需要修改后续
             overvolt_count=3000;//保持在3000，防止溢出
         }
          

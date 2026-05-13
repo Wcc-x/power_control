@@ -34,6 +34,7 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc);
 extern volatile uint16_t top;
 extern volatile uint16_t tail;
 extern volatile can_pack FDCAN_RX_FIFO[FIFO_LENGTH];
+extern volatile uint32_t ADC_measure;
 uint8_t FDCAN_GetMessage(uint32_t* CANID, uint8_t* data);
 
 //ADC轮询函数
